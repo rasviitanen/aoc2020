@@ -1,0 +1,10 @@
+[package]
+name = "rusty-advent"
+version = "0.1.0"
+authors = ["rasviitanen <rasviitanen@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+
+[lib]
+path = "code.rs"

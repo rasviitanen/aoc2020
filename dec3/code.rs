@@ -1,10 +1,10 @@
 #[allow(dead_code)]
-fn count_trees(terrain: impl Iterator<Item = String>) -> usize {
+fn count_trees(terrain: impl Iterator<Item = String>, slope: (usize, usize)) -> usize {
     let mut trees = 0;
     let mut x = 0;
-    let slope = 3;
+    let (slope_x, slope_y) = slope;
 
-    for row in terrain {
+    for row in terrain.step_by(slope_y) {
         let len = row.len();
         let standing_on = row.chars().nth(x % len);
 
@@ -12,7 +12,7 @@ fn count_trees(terrain: impl Iterator<Item = String>) -> usize {
             trees += 1;
         }
 
-        x += slope;
+        x += slope_x;
     }
 
     trees
@@ -39,9 +39,21 @@ mod tests {
             ".#..#...#.#".to_string(),
         ];
 
-        let n = count_trees(terrain.into_iter());
+        let n = count_trees(terrain.clone().into_iter(), (3, 1));
 
         println!("Answer is: {}", n);
+
+        let n: usize = [
+            count_trees(terrain.clone().into_iter(), (1, 1)),
+            count_trees(terrain.clone().into_iter(), (3, 1)),
+            count_trees(terrain.clone().into_iter(), (5, 1)),
+            count_trees(terrain.clone().into_iter(), (7, 1)),
+            count_trees(terrain.clone().into_iter(), (1, 2)),
+        ]
+        .iter()
+        .product();
+
+        println!("Answer to part two is: {}", n);
     }
 
     #[test]
@@ -60,7 +72,7 @@ mod tests {
             ".#..#...#.#.#..#...#.#.#..#...#.#.#..#...#.#.#..#...#.#.#..#...#.#".to_string(),
         ];
 
-        let n = count_trees(terrain.into_iter());
+        let n = count_trees(terrain.into_iter(), (3, 1));
 
         println!("Answer is: {}", n);
     }
@@ -71,8 +83,45 @@ mod tests {
             .lines()
             .flatten();
 
-        let n = count_trees(&mut terrain);
+        let n = count_trees(&mut terrain, (3, 1));
 
         println!("Answer is: {}", n);
+
+        let n: usize = [
+            count_trees(
+                &mut std::io::BufReader::new(std::fs::File::open("input.txt").unwrap())
+                    .lines()
+                    .flatten(),
+                (1, 1),
+            ),
+            count_trees(
+                &mut std::io::BufReader::new(std::fs::File::open("input.txt").unwrap())
+                    .lines()
+                    .flatten(),
+                (3, 1),
+            ),
+            count_trees(
+                &mut std::io::BufReader::new(std::fs::File::open("input.txt").unwrap())
+                    .lines()
+                    .flatten(),
+                (5, 1),
+            ),
+            count_trees(
+                &mut std::io::BufReader::new(std::fs::File::open("input.txt").unwrap())
+                    .lines()
+                    .flatten(),
+                (7, 1),
+            ),
+            count_trees(
+                &mut std::io::BufReader::new(std::fs::File::open("input.txt").unwrap())
+                    .lines()
+                    .flatten(),
+                (1, 2),
+            ),
+        ]
+        .iter()
+        .product();
+
+        println!("Answer to part two is: {}", n);
     }
 }

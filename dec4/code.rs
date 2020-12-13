@@ -10,18 +10,78 @@ fn is_valid(passport_string: &str) -> bool {
     want.is_empty()
 }
 
+fn is_valid_part_two(passport_string: &str) -> bool {
+    let mut want = ["byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid"]
+        .iter()
+        .collect::<std::collections::HashSet<_>>();
+
+    for (key, value) in passport_string.split_whitespace().map(|x| x.split_at(3)) {
+        let value = value.trim_start_matches(':');
+        let format_is_ok = match key {
+            "byr" => { (1920..=2002).contains(&value.parse().unwrap_or(0)) }
+            "iyr" => { (2010..=2020).contains(&value.parse().unwrap_or(0)) }
+            "eyr" => { (2010..=2030).contains(&value.parse().unwrap_or(0)) }
+            "hgt" => { 
+                if let Some(digits) = value.strip_suffix("cm") {
+                    (150..=193).contains(&digits.parse::<u32>().unwrap_or(0))
+                } else if let Some(digits) = value.strip_suffix("in") {
+                    (59..=76).contains(&digits.parse::<u32>().unwrap_or(0))
+                } else {
+                    false
+                }
+            }
+            "hcl" => {
+                value.len() == 7 && value.chars().next() == Some('#')
+            }
+            "ecl" => {
+                match value {
+                    "amb" | "blu" | "brn" | "gry" | "grn" | "hzl" | "oth" => true,
+                    _ => false,
+                }
+            }
+            "pid" => {
+                value.len() == 9 && value.parse::<u32>().is_ok()
+            }
+            _ => false,
+        };
+
+        if format_is_ok {
+            want.remove(&key);
+        }
+    }
+
+    want.is_empty()
+}
+
 #[allow(dead_code)]
-fn process_passports(passport_lines: impl Iterator<Item = String>) -> usize {
+enum Strategy {
+    PartOne,
+    PartTwo,
+}
+
+#[allow(dead_code)]
+fn process_passports(passport_lines: impl Iterator<Item = String>, strategy: Strategy) -> usize {
     let mut valid = 0;
     let mut passport_lines = passport_lines.peekable();
     while let Some(_) = passport_lines.peek() {
-        if is_valid(
-            &passport_lines
-                .by_ref()
-                .take_while(|line| line != "")
-                .collect::<Vec<_>>()
-                .join(" "),
-        ) {
+        let is_valid = match strategy {
+            Strategy::PartOne => is_valid(
+                &passport_lines
+                    .by_ref()
+                    .take_while(|line| line != "")
+                    .collect::<Vec<_>>()
+                    .join(" "),
+            ),
+            Strategy::PartTwo => is_valid_part_two(
+                &passport_lines
+                    .by_ref()
+                    .take_while(|line| line != "")
+                    .collect::<Vec<_>>()
+                    .join(" "),
+            ),
+        };
+
+        if is_valid {
             valid += 1;
         }
     }
@@ -56,19 +116,31 @@ mod tests {
                 .to_string(),
         ];
 
-        let n = process_passports(terrain.into_iter());
+        let n = process_passports(terrain.into_iter(), Strategy::PartOne);
 
         println!("Answer is: {}", n);
     }
 
     #[test]
     fn real() {
-        let mut terrain = std::io::BufReader::new(std::fs::File::open("input.txt").unwrap())
+        { // Part one
+            let mut terrain = std::io::BufReader::new(std::fs::File::open("input.txt").unwrap())
+                .lines()
+                .flatten();
+    
+            let n = process_passports(&mut terrain, Strategy::PartOne);
+    
+            println!("Answer is: {}", n);
+        }
+
+        { // Part two
+            let mut terrain = std::io::BufReader::new(std::fs::File::open("input.txt").unwrap())
             .lines()
             .flatten();
-
-        let n = process_passports(&mut terrain);
-
-        println!("Answer is: {}", n);
+    
+            let n = process_passports(&mut terrain, Strategy::PartTwo);
+    
+            println!("Answer to part two is: {}", n);
+        }
     }
 }
